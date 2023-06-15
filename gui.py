@@ -1,36 +1,67 @@
-import PySimpleGUI as gui
+import PySimpleGUI as sg
 from zip_creator import make_archive
 
-label_files = gui.Text("Choose files to compress")
-input_files = gui.Input(key="files_text")
-button_files = gui.FilesBrowse("Choose", key="files")
+def compress_files():
+    label_files = sg.Text("Choose files to compress")
+    input_files = sg.Input(key="files_text")
+    button_files = sg.FilesBrowse("Choose", key="files")
+    label_folder = sg.Text("Choose folder to contain files")
+    input_folder = sg.Input(key="folder_text")
+    button_folder = sg.FolderBrowse("Choose", key="folder")
+    button_home = sg.B("<", key="Back", font=12, size=(3, 0))
+    button_compress = sg.Button("Compress")
+    output = sg.Text(key="output_compress")
 
-label_folder = gui.Text("Choose folder to contain files")
-input_folder = gui.Input(key="folder_text")
-button_folder = gui.FolderBrowse("Choose", key="folder")
+    layout = [[button_home], [label_files], [input_files, button_files],
+              [label_folder], [input_folder, button_folder],
+              [button_compress, output]]
+    return sg.Window("File Compressor", layout, size=(500, 300), resizable=True, finalize=True)
 
-button_compress = gui.Button("Compress")
 
-output = gui.Text(key="output_compress")
+sg.theme("black")
+text_select = sg.T("Choose compression type:", font=14, pad=(0, 10))
+button_files = sg.Button("Files", key="Files", size=(15, 2), pad=(0, 5))
+button_folder = sg.Button("Folders", key="Folder", size=(15, 2), pad=(0, 5))
+button_files_folder = sg.Button("Both", key="Both", size=(15, 2), pad=(0, 5))
+layout = [
+    [sg.VPush()],
+    [sg.Push(), text_select, sg.Push()],
+    [sg.Push(), button_files, sg.Push()],
+    [sg.Push(), button_folder, sg.Push()],
+    [sg.Push(), button_files_folder, sg.Push()],
+    [sg.VPush(), sg.Sizegrip()]
+]
 
-window = gui.Window("File Compressor",
-                    layout=[[label_files], [input_files, button_files],
-                            [label_folder], [input_folder, button_folder],
-                            [button_compress, output]])
+window = sg.Window("File Compressor", layout, size=(500, 300), resizable=True)
 
 while True:
     event, values = window.read()
-    print(event)
-    print(values)
 
-    if event is None:
+    if event is None or event == sg.WINDOW_CLOSED:
         break
 
-    window['files_text'].update(value="")
-    window['folder_text'].update(value="")
-    window['output_compress'].update(value="Succesfull")
+    if event == "Files":
+        window.hide()
+        window2 = compress_files()
+        back_to_main_window = False
+        while True:
+            event2, values2 = window2.read()
+            if event2 == "Back":
+                back_to_main_window = True
+                break
+            if event2 is None or event2 == sg.WINDOW_CLOSED:
+                window.close()
+                break
+            window2['files_text'].update("")
+            window2['folder_text'].update("")
+            window2['output_compress'].update("Succesfully!!!")
+            file_path = values2['files'].split(";")
+            folder_path = values2['folder']
+            make_archive(file_path, folder_path)
+        window2.close()
 
-    file_path = values['files'].split(";")
-    folder_path = values['folder']
-    make_archive(file_path, folder_path)
+    if back_to_main_window:
+        back_to_main_window = False
+        window.un_hide()
+
 window.close()
